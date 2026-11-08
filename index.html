@@ -1,9 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Creyds Music Player</title>
+
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:transparent}
@@ -23,36 +25,35 @@ button.play{background:#fff;color:#111;width:39px;height:39px;border-radius:50%;
 input[type=range]{flex:1;min-width:0;height:4px;accent-color:#6e1010;cursor:pointer}
 </style>
 </head>
+
 <body>
+
 <div class="player">
   <div class="top">
     <div class="note">♫</div>
     <div class="info">
       <div class="label">NOW PLAYING</div>
-      <div class="name" id="songName">Selecciona una canción</div>
-      <div class="sub" id="songCount">Bring Me The Horizon · 00 / 04</div>
+      <div class="name" id="songName">Drown</div>
+      <div class="sub" id="songCount">Bring Me The Horizon · 01 / 04</div>
     </div>
   </div>
+
   <div class="controls">
-    <button id="prev" aria-label="Canción anterior">⏮</button>
+    <button id="prev" aria-label="Anterior">⏮</button>
     <button class="play" id="toggle" aria-label="Reproducir">▶</button>
-    <button id="next" aria-label="Siguiente canción">⏭</button>
+    <button id="next" aria-label="Siguiente">⏭</button>
   </div>
+
   <div class="progress">
     <span id="elapsed">0:00</span>
-    <input id="seek" type="range" min="0" max="100" value="0" aria-label="Progreso">
+    <input id="seek" type="range" min="0" max="100" value="0">
     <span id="duration">0:00</span>
   </div>
-  <audio id="audio" preload="metadata"></audio>
+
+  <audio id="audio" preload="auto" autoplay></audio>
 </div>
 
 <script>
-/* ==================================================
-   EDITA AQUÍ TU LISTA DE CANCIONES
-   Pon el nombre y el enlace directo de cada archivo.
-   Puedes agregar o quitar canciones cuando quieras.
-   ================================================== */
-
 const songs = [
   {
     title: "Drown",
@@ -72,7 +73,6 @@ const songs = [
   }
 ];
 
-/* No necesitas modificar el código que sigue. */
 const audio = document.getElementById("audio");
 const songName = document.getElementById("songName");
 const songCount = document.getElementById("songCount");
@@ -83,10 +83,6 @@ const duration = document.getElementById("duration");
 
 let current = 0;
 
-function validSongs() {
-  return songs.filter(s => s.url && !s.url.startsWith("PEGA_AQUI"));
-}
-
 function time(seconds) {
   if (!Number.isFinite(seconds)) return "0:00";
   const m = Math.floor(seconds / 60);
@@ -94,91 +90,88 @@ function time(seconds) {
   return `${m}:${s}`;
 }
 
-function loadSong(index, autoplay = false) {
-  const list = validSongs();
-  if (!list.length) {
-    songName.textContent = "Añade los enlaces de las canciones";
-    songCount.textContent = "Bring Me The Horizon · 00 / 00";
-    return;
-  }
+function updateInfo() {
+  songName.textContent = songs[current].title;
+  songCount.textContent =
+    `Bring Me The Horizon · ${String(current + 1).padStart(2, "0")} / ${String(songs.length).padStart(2, "0")}`;
+}
 
-  current = (index + list.length) % list.length;
-  const song = list[current];
+function playSong() {
+  audio.play().then(() => {
+    toggle.textContent = "Ⅱ";
+  }).catch(() => {
+    toggle.textContent = "▶";
+  });
+}
+
+function loadSong(index, autoplay = false) {
+  current = (index + songs.length) % songs.length;
 
   audio.pause();
-  audio.src = song.url;
+  audio.src = songs[current].url;
   audio.load();
 
-  songName.textContent = song.title;
-  songCount.textContent =
-    `Bring Me The Horizon · ${String(current + 1).padStart(2, "0")} / ${String(list.length).padStart(2, "0")}`;
+  updateInfo();
+
   toggle.textContent = "▶";
   seek.value = 0;
   elapsed.textContent = "0:00";
   duration.textContent = "0:00";
 
-  if (autoplay) {
-    audio.play().then(() => {
-      toggle.textContent = "Ⅱ";
-    }).catch(() => {
-      songName.textContent = "No se pudo cargar la canción";
-      toggle.textContent = "▶";
-    });
-  }
+  if (autoplay) playSong();
 }
 
-toggle.addEventListener("click", () => {
-  if (!validSongs().length) {
-    songName.textContent = "Añade los enlaces en el HTML";
-    return;
-  }
-
+toggle.addEventListener("click", function() {
   if (audio.paused) {
-    if (!audio.src) {
-      loadSong(current, true);
-    } else {
-      audio.play().then(() => {
-        toggle.textContent = "II";
-      }).catch(() => {
-        songName.textContent = "No se pudo cargar la canción";
-      });
-    }
+    playSong();
   } else {
     audio.pause();
     toggle.textContent = "▶";
   }
 });
 
-document.getElementById("prev").addEventListener("click", () => {
+document.getElementById("prev").addEventListener("click", function() {
   loadSong(current - 1, true);
 });
 
-document.getElementById("next").addEventListener("click", () => {
+document.getElementById("next").addEventListener("click", function() {
   loadSong(current + 1, true);
 });
 
-audio.addEventListener("ended", () => {
+audio.addEventListener("ended", function() {
   loadSong(current + 1, true);
 });
 
-audio.addEventListener("loadedmetadata", () => {
+audio.addEventListener("loadedmetadata", function() {
   duration.textContent = time(audio.duration);
 });
 
-audio.addEventListener("timeupdate", () => {
+audio.addEventListener("timeupdate", function() {
   elapsed.textContent = time(audio.currentTime);
+
   if (Number.isFinite(audio.duration) && audio.duration > 0) {
     seek.value = (audio.currentTime / audio.duration) * 100;
   }
 });
 
-seek.addEventListener("input", () => {
+audio.addEventListener("play", function() {
+  toggle.textContent = "Ⅱ";
+});
+
+audio.addEventListener("pause", function() {
+  toggle.textContent = "▶";
+});
+
+seek.addEventListener("input", function() {
   if (Number.isFinite(audio.duration) && audio.duration > 0) {
     audio.currentTime = (Number(seek.value) / 100) * audio.duration;
   }
 });
 
+/* AUTOPLAY CON SONIDO */
+
 loadSong(0, true);
+
 </script>
 </body>
 </html>
